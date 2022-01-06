@@ -1,0 +1,46 @@
+#title: Brazilian Presidents Wikidata Top Trumps
+#defaultView:ImageGrid
+SELECT 
+?item ?itemLabel 
+?place_of_birth ?place_of_birthLabel
+(CONCAT("Pop of city: ", STR( ?place_pop )) AS ?population )
+(CONCAT("Years of government: ", STR(?total_duration )) AS ?duration_label )
+(CONCAT("Wikipedias: ", STR( ?wikipedias )) AS ?wikipedia )
+(CONCAT("Age when president: ", STR( ?age )) AS ?age_when_president )
+(CONCAT("Number of awards: ", STR( ?award_count )) AS ?award_label )
+?sample_image
+WHERE
+{
+  BIND(YEAR(?min_start) - YEAR(?birth_date) as ?age) . 
+ {
+  SELECT ?item ?image
+  (COUNT(DISTINCT ?award) as ?award_count)
+  (SUM(DISTINCT ?duration) as ?total_duration)
+  ?wikipedias
+  ?birth_date 
+  ?place_of_birth
+  (MIN(?start) as ?min_start)
+  (MAX(?pop) as ?place_pop)  
+  (SAMPLE(?image) as ?sample_image) 
+  WHERE 
+  {
+    ?item wdt:P31 wd:Q5 .
+    ?item p:P39 ?statement .
+    ?statement ps:P39 wd:Q5176750 . # Change here to change country
+    ?statement pq:P580 ?start .
+    ?statement pq:P582 ?end .
+       
+    BIND(YEAR(?end) - YEAR(?start) as ?duration) .    
+    ?item wdt:P166 ?award .
+    ?item wdt:P18 ?image .
+    ?item wikibase:sitelinks ?wikipedias .
+    ?item wdt:P569 ?birth_date .
+    ?item wdt:P19 ?place_of_birth .
+    ?place_of_birth wdt:P1082 ?pop .     
+  }
+   GROUP BY  ?item ?itemLabel ?image ?award_label ?wikipedias ?birth_date  ?place_of_birth
+ }
+   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+ORDER BY DESC(?award_count)
+# Query by Tiago Lubiana; released to the public domain (CC0 license)
